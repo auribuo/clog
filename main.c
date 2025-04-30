@@ -1,3 +1,4 @@
+#define CLOG_IMPLEMENTATION // Needed: pull in implementation
 #define CLOG_ENABLE_CTX   // Needed to use contexts
 #define CLOG_STRIP_PREFIX // Optional: Used to strip prefixes
 #include "clog.h"

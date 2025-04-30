@@ -9,6 +9,7 @@ Repo: github.com/auribuo/clog
 
 Example
 ```
+#define CLOG_IMPLEMENTATION // Needed: pull in implementation
 #define CLOG_ENABLE_CTX // Needed to use contexts
 #define CLOG_STRIP_PREFIX // Optional: Used to strip prefixes
 #include "clog.h"
@@ -48,7 +49,6 @@ int main(void) {
 
 #ifndef __CLOG_H__
 #define __CLOG_H__
-#include <pthread.h>
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -57,6 +57,11 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
+
+#ifndef CLOG_MALLOC
+#define CLOG_MALLOC malloc
+#endif // !CLOG_MALLOC
 
 #define CLOG_CHECK_ALLOC(ptr) \
     if (!ptr) {               \
@@ -115,63 +120,14 @@ typedef struct {
     char *(*conv_fun)(void *);
 } Clog_Arg;
 
-static inline Clog_Arg clog_make_log_arg_t() {
-    Clog_Arg arg;
-    arg.ty = TERM;
-    arg.val.a = NULL;
-    arg.conv_fun = NULL;
-    return arg;
-}
-
-static inline Clog_Arg clog_make_log_arg_i(int v, Clog_Integer_Format fmt) {
-    Clog_Arg arg;
-    arg.ty = INT;
-    arg.val.i = v;
-    arg.conv_fun = NULL;
-    arg.opt = fmt;
-    return arg;
-}
-
-static inline Clog_Arg clog_make_log_arg_u(unsigned int v, Clog_Integer_Format fmt) {
-    Clog_Arg arg;
-    arg.ty = UINT;
-    arg.val.u = v;
-    arg.conv_fun = NULL;
-    arg.opt = fmt;
-    return arg;
-}
-
-static inline Clog_Arg clog_make_log_arg_f(float v) {
-    Clog_Arg arg;
-    arg.ty = FLOAT;
-    arg.val.f = v;
-    arg.conv_fun = NULL;
-    return arg;
-}
-
-static inline Clog_Arg clog_make_log_arg_s(const char *v) {
-    Clog_Arg arg;
-    arg.ty = STRING;
-    arg.val.s = v;
-    arg.conv_fun = NULL;
-    return arg;
-}
-
-static inline Clog_Arg clog_make_log_arg_c(char v) {
-    Clog_Arg arg;
-    arg.ty = CHAR;
-    arg.val.i = v;
-    arg.conv_fun = NULL;
-    return arg;
-}
-
-static inline Clog_Arg clog_make_log_arg_a(void *v, char *(*fn)(void *)) {
-    Clog_Arg arg;
-    arg.ty = ANY;
-    arg.val.a = v;
-    arg.conv_fun = fn;
-    return arg;
-}
+// C++ has no inline struct initialization apparently
+static inline Clog_Arg clog_make_log_arg_t();
+static inline Clog_Arg clog_make_log_arg_i(int v, Clog_Integer_Format fmt);
+static inline Clog_Arg clog_make_log_arg_u(unsigned int v, Clog_Integer_Format fmt);
+static inline Clog_Arg clog_make_log_arg_f(float v);
+static inline Clog_Arg clog_make_log_arg_s(const char *v);
+static inline Clog_Arg clog_make_log_arg_c(char v);
+static inline Clog_Arg clog_make_log_arg_a(void *v, char *(*fn)(void *));
 
 void clog_set_log_level(Clog_Log_Level log_level);
 #define clog_disable_log() clog_set_log_level(nolog)
@@ -291,15 +247,37 @@ typedef struct {
 
 _Noreturn void panic(const char *msg);
 _Noreturn void panicf(const char *msg, ...);
+const char *clog_header(Clog_Log_Level level);
+void clog_set_log_level(Clog_Log_Level level);
+void clog_set_color_enabled(bool enabled);
+void clog_set_timestamp_enabled(bool enabled);
+const char *clog_current_time();
+const char *clog_fmt_context(const char *ctx);
+const char *clog_format_src(const char *file, int line, Clog_Log_Level level);
+bool clog_do_log(const char *ctx, Clog_Log_Level level);
+const char *clog_stringify_log_arg(Clog_Arg arg);
+void clog_print_log(Clog_Log_Level level, const char *ctx, const char *file, int line, bool isf, const char *msg, va_list args);
+void clog_log_msg(Clog_Log_Level level, const char *ctx, const char *file, int line, const char *msg, ...);
+void clog_log_msgf(Clog_Log_Level level, const char *ctx, const char *file, int line, const char *format, ...);
+#ifdef CLOG_ENABLE_CTX
+void clog_print_view(Clog_String_View view, FILE *stream);
+void clog_expect_rule_char(Clog_String_View view, const char c, const char *filter);
+void clog_expect_advance(Clog_String_View *view, const char c, const char *filter);
+void clog_parse_filter_elem(Clog_String_View view, const char *filter);
+void clog_parse_log_filter(const char *filter);
+void clog_parse_log_filter_env();
+void clog_reset_filter();
+#endif // CLOG_ENABLE_CTX
 
+#ifdef CLOG_IMPLEMENTATION
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
 // --- START NOB CODE ---
 // This code is taken from https://github.com/tsoding/nob.h/blob/112911eba033af91e3d6e7100f8dde69127b3525/nob.h
-
 #define NOB_REALLOC realloc
 #define NOB_FREE free
 
@@ -308,7 +286,7 @@ _Noreturn void panicf(const char *msg, ...);
 #define NOB_DA_INIT_CAP 256
 #endif
 
-// Slightly modified to not having to brin in assert
+// Slightly modified to not having to bring in assert
 #define nob_da_reserve(da, expected_capacity)                                              \
     do {                                                                                   \
         if ((expected_capacity) > (da)->capacity) {                                        \
@@ -354,6 +332,64 @@ _Noreturn void panicf(const char *msg, ...) {
         va_end(argptr);
     }
     exit(1);
+}
+
+static inline Clog_Arg clog_make_log_arg_t() {
+    Clog_Arg arg;
+    arg.ty = TERM;
+    arg.val.a = NULL;
+    arg.conv_fun = NULL;
+    return arg;
+}
+
+static inline Clog_Arg clog_make_log_arg_i(int v, Clog_Integer_Format fmt) {
+    Clog_Arg arg;
+    arg.ty = INT;
+    arg.val.i = v;
+    arg.conv_fun = NULL;
+    arg.opt = fmt;
+    return arg;
+}
+
+static inline Clog_Arg clog_make_log_arg_u(unsigned int v, Clog_Integer_Format fmt) {
+    Clog_Arg arg;
+    arg.ty = UINT;
+    arg.val.u = v;
+    arg.conv_fun = NULL;
+    arg.opt = fmt;
+    return arg;
+}
+
+static inline Clog_Arg clog_make_log_arg_f(float v) {
+    Clog_Arg arg;
+    arg.ty = FLOAT;
+    arg.val.f = v;
+    arg.conv_fun = NULL;
+    return arg;
+}
+
+static inline Clog_Arg clog_make_log_arg_s(const char *v) {
+    Clog_Arg arg;
+    arg.ty = STRING;
+    arg.val.s = v;
+    arg.conv_fun = NULL;
+    return arg;
+}
+
+static inline Clog_Arg clog_make_log_arg_c(char v) {
+    Clog_Arg arg;
+    arg.ty = CHAR;
+    arg.val.i = v;
+    arg.conv_fun = NULL;
+    return arg;
+}
+
+static inline Clog_Arg clog_make_log_arg_a(void *v, char *(*fn)(void *)) {
+    Clog_Arg arg;
+    arg.ty = ANY;
+    arg.val.a = v;
+    arg.conv_fun = fn;
+    return arg;
 }
 
 static Clog_Log_Level lvl = info;
@@ -402,7 +438,7 @@ const char *clog_current_time() {
     // 21 = Time format string
     // 1  = Whitespace
     size_t buflen = use_color ? 8 + 21 + 7 : 21 + 1;
-    char *buf = (char *)malloc(buflen);
+    char *buf = (char *)CLOG_MALLOC(buflen);
     CLOG_CHECK_ALLOC(buf);
 
     time_t now = time(NULL);
@@ -420,7 +456,7 @@ const char *clog_fmt_context(const char *ctx) {
     if (use_color) {
         buflen += 8 + 7;
     }
-    char *res_buf = (char *)malloc(buflen + 1);
+    char *res_buf = (char *)CLOG_MALLOC(buflen + 1);
     CLOG_CHECK_ALLOC(res_buf);
     sprintf(res_buf, use_color ? "\033[35m{ %s }\033[0m " : "{ %s } ", ctx);
     return res_buf;
@@ -444,7 +480,7 @@ const char *clog_format_src(const char *file, int line, Clog_Log_Level level) {
         // Add lenghts of escape s
         res_len += 8 + 7;
     }
-    char *res_buf = (char *)malloc(res_len);
+    char *res_buf = (char *)CLOG_MALLOC(res_len);
     sprintf(res_buf, use_color ? "\033[35m<%s:%s>\033[0m " : "<%s:%s> ", file, nbuf);
     return res_buf;
 }
@@ -485,19 +521,19 @@ const char *clog_stringify_log_arg(Clog_Arg arg) {
     case INT: {
         switch (arg.opt) {
         case BIN: {
-            char *ib_buf = (char *)malloc(64);
+            char *ib_buf = (char *)CLOG_MALLOC(64);
             CLOG_CHECK_ALLOC(ib_buf);
             sprintf(ib_buf, "%#lb", arg.val.i);
             return ib_buf;
         } break;
         case HEX: {
-            char *ih_buf = (char *)malloc(16);
+            char *ih_buf = (char *)CLOG_MALLOC(16);
             CLOG_CHECK_ALLOC(ih_buf);
             sprintf(ih_buf, "%#lx", arg.val.i);
             return ih_buf;
         } break;
         default: {
-            char *i_buf = (char *)malloc(21);
+            char *i_buf = (char *)CLOG_MALLOC(21);
             CLOG_CHECK_ALLOC(i_buf);
             sprintf(i_buf, "%ld", arg.val.i);
             return i_buf;
@@ -507,19 +543,19 @@ const char *clog_stringify_log_arg(Clog_Arg arg) {
     case UINT: {
         switch (arg.opt) {
         case BIN: {
-            char *ib_buf = (char *)malloc(64);
+            char *ib_buf = (char *)CLOG_MALLOC(64);
             CLOG_CHECK_ALLOC(ib_buf);
             sprintf(ib_buf, "%#lb", arg.val.u);
             return ib_buf;
         } break;
         case HEX: {
-            char *ih_buf = (char *)malloc(16);
+            char *ih_buf = (char *)CLOG_MALLOC(16);
             CLOG_CHECK_ALLOC(ih_buf);
             sprintf(ih_buf, "%#lx", arg.val.u);
             return ih_buf;
         } break;
         default: {
-            char *i_buf = (char *)malloc(21);
+            char *i_buf = (char *)CLOG_MALLOC(21);
             CLOG_CHECK_ALLOC(i_buf);
             sprintf(i_buf, "%lu", arg.val.u);
             return i_buf;
@@ -527,7 +563,7 @@ const char *clog_stringify_log_arg(Clog_Arg arg) {
         }
     } break;
     case FLOAT: {
-        char *f_buf = (char *)malloc(32);
+        char *f_buf = (char *)CLOG_MALLOC(32);
         CLOG_CHECK_ALLOC(f_buf);
         sprintf(f_buf, "%.3f", arg.val.f);
         return f_buf;
@@ -537,13 +573,13 @@ const char *clog_stringify_log_arg(Clog_Arg arg) {
         if (str_val == NULL) {
             panicf("Log arg has type string but value is null");
         }
-        char *s_buf = (char *)malloc(strlen(str_val) + 3);
+        char *s_buf = (char *)CLOG_MALLOC(strlen(str_val) + 3);
         CLOG_CHECK_ALLOC(s_buf);
         sprintf(s_buf, "\"%s\"", str_val);
         return s_buf;
     } break;
     case CHAR: {
-        char *c_buf = (char *)malloc(4);
+        char *c_buf = (char *)CLOG_MALLOC(4);
         CLOG_CHECK_ALLOC(c_buf);
         sprintf(c_buf, "'%c'", (int)arg.val.i);
         return c_buf;
@@ -698,7 +734,7 @@ void clog_parse_log_filter(const char *filter) {
     if (clog_do_log("filter", debug)) {
         for (size_t i = 0; i < enabled_logs.count; i++) {
             Clog_String_View en = enabled_logs.items[i];
-            char *ctx = malloc(sizeof(char) * (en.len + 1));
+            char *ctx = CLOG_MALLOC(sizeof(char) * (en.len + 1));
             CLOG_CHECK_ALLOC(ctx);
             memcpy(ctx, en.start, en.len);
             ctx[en.len] = '\0';
@@ -707,7 +743,7 @@ void clog_parse_log_filter(const char *filter) {
         }
         for (size_t i = 0; i < disabled_logs.count; i++) {
             Clog_String_View di = disabled_logs.items[i];
-            char *ctx = malloc(sizeof(char) * (di.len + 1));
+            char *ctx = CLOG_MALLOC(sizeof(char) * (di.len + 1));
             CLOG_CHECK_ALLOC(ctx);
             memcpy(ctx, di.start, di.len);
             ctx[di.len] = '\0';
@@ -727,7 +763,10 @@ void clog_reset_filter() {
     disabled_logs.count = 0;
 }
 #endif // CLOG_ENABLE_CTX
+#endif // CLOG_IMPLEMENTATION
 
+#ifndef _CLOG_STRIP_GUARD
+#define _CLOG_STRIP_GUARD
 #ifdef CLOG_STRIP_PREFIX
 #define RED CLOG_RED
 #define GREEN CLOG_GREEN
@@ -798,6 +837,7 @@ void clog_reset_filter() {
 #define parse_log_filter_env clog_parse_log_filter_env
 #define reset_filter clog_reset_filter
 #endif // CLOG_STRIP_PREFIX
+#endif // !_CLOG_STRIP_GUARD
 
 #ifdef __cplusplus
 }
