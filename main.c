@@ -1,6 +1,7 @@
+#include <unistd.h> // needed only for sleep
 #define CLOG_IMPLEMENTATION // Needed: pull in implementation
-#define CLOG_ENABLE_CTX   // Needed to use contexts
-#define CLOG_STRIP_PREFIX // Optional: Used to strip prefixes
+#define CLOG_ENABLE_CTX     // Needed to use contexts
+#define CLOG_STRIP_PREFIX   // Optional: Used to strip prefixes
 #include "clog.h"
 
 typedef struct {
@@ -9,6 +10,11 @@ typedef struct {
     int fav_num;
     const char *address;
 } Person;
+
+void person_to_str(void *p, char *out) {
+    Person *person = (Person *)p;
+    sprintf(out, "Person{name='%s', age=%d}", person->name, person->age);
+}
 
 int main(void) {
     set_log_level(debug);    // Set the log level (default, info)
@@ -31,4 +37,7 @@ int main(void) {
     LOG_ERROR("Oh, no!", LOG_ARG_UB("fav_bin_num", p.fav_num)); // Numbers can be formatted differently
     LOG_DEBUG("Debug includes the file and line");
     LOG_INFO_CTX("main", "You can also include contexts to logs"); // Hidden because of filter
+    LOG_DEBUG_CTX("test", "You can also log arbitrary data as long as you provide a conversion function", LOG_ARG_AS(&p, person_to_str));
+    sleep(1);
+    LOG_INFO("This is a test log after n seconds", LOG_ARG_U("n", 1));
 }
