@@ -124,7 +124,7 @@ typedef struct {
         const char *s;
         void *a;
     } val;
-    size_t str_len;
+    int str_len;
     Clog_Integer_Format opt;
     void (*conv_fun)(void *, char *);
 } Clog_Arg;
@@ -271,7 +271,7 @@ void clog_current_time(char *out);
 void clog_fmt_context(const char *ctx, char *out);
 void clog_format_src(const char *file, int line, Clog_Log_Level level, char *out);
 bool clog_do_log(const char *ctx, Clog_Log_Level level);
-const char *clog_stringify_log_arg(Clog_Arg arg);
+void clog_stringify_log_arg(Clog_Arg arg);
 void clog_print_log(Clog_Log_Level level, const char *ctx, const char *file, int line, bool isf, const char *msg, va_list args);
 void clog_log_msg(Clog_Log_Level level, const char *ctx, const char *file, int line, const char *msg, ...);
 void clog_log_msgf(Clog_Log_Level level, const char *ctx, const char *file, int line, const char *format, ...);
@@ -514,7 +514,7 @@ bool clog_do_log(const char *ctx, Clog_Log_Level level) {
     return level == nolog || level >= lvl;
 }
 
-const char *clog_stringify_log_arg(Clog_Arg arg) {
+void clog_stringify_log_arg(Clog_Arg arg) {
     switch (arg.ty) {
     case INT: {
         switch (arg.opt) {
