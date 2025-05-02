@@ -17,7 +17,7 @@ void person_to_str(void *p, char *out) {
 }
 
 int main(void) {
-    set_log_level(debug);    // Set the log level (default, info)
+    set_log_level(DEBUG);    // Set the log level (default, info)
     set_color_enabled(true); // Enable colors. In unix you can use set_color_enabled_auto() to auto enable colors for ttys
 
     Person p = {
