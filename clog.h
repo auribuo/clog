@@ -147,14 +147,14 @@ typedef struct {
 } Clog_Arg;
 
 // C++ has no inline struct initialization apparently
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_t();
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_i(int v, Clog_Integer_Format fmt);
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_u(unsigned int v, Clog_Integer_Format fmt);
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_f(float v);
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_s(const char *v);
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_sl(const char *v, size_t len);
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_c(char v);
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_a(void *v, void (*fn)(void *, char *));
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_t();
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_i(int v, Clog_Integer_Format fmt);
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_u(unsigned int v, Clog_Integer_Format fmt);
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_f(float v);
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_s(const char *v);
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_sl(const char *v, size_t len);
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_c(char v);
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_a(void *v, void (*fn)(void *, char *));
 
 void clog_set_log_level(Clog_Log_Level log_level);
 #define clog_disable_log() clog_set_log_level(nolog)
@@ -374,7 +374,7 @@ __attribute__((noreturn)) void panicf(const char *msg, ...) {
     exit(1);
 }
 
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_t() {
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_t() {
     Clog_Arg arg;
     arg.ty = CLOG_ARG_TERM;
     arg.val.a = NULL;
@@ -382,7 +382,7 @@ static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_t() {
     return arg;
 }
 
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_i(int v, Clog_Integer_Format fmt) {
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_i(int v, Clog_Integer_Format fmt) {
     Clog_Arg arg;
     arg.ty = CLOG_ARG_INT;
     arg.val.i = v;
@@ -391,7 +391,7 @@ static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_i(int v, Clog_I
     return arg;
 }
 
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_u(unsigned int v, Clog_Integer_Format fmt) {
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_u(unsigned int v, Clog_Integer_Format fmt) {
     Clog_Arg arg;
     arg.ty = CLOG_ARG_UINT;
     arg.val.u = v;
@@ -400,7 +400,7 @@ static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_u(unsigned int 
     return arg;
 }
 
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_f(float v) {
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_f(float v) {
     Clog_Arg arg;
     arg.ty = CLOG_ARG_FLOAT;
     arg.val.f = v;
@@ -408,7 +408,7 @@ static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_f(float v) {
     return arg;
 }
 
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_s(const char *v) {
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_s(const char *v) {
     Clog_Arg arg;
     arg.ty = CLOG_ARG_STRING;
     arg.val.s = v;
@@ -416,7 +416,7 @@ static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_s(const char *v
     return arg;
 }
 
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_sl(const char *v, size_t len) {
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_sl(const char *v, size_t len) {
     Clog_Arg arg;
     arg.ty = CLOG_ARG_STRING;
     arg.val.s = v;
@@ -425,7 +425,7 @@ static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_sl(const char *
     return arg;
 }
 
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_c(char v) {
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_c(char v) {
     Clog_Arg arg;
     arg.ty = CLOG_ARG_CHAR;
     arg.val.i = v;
@@ -433,7 +433,7 @@ static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_c(char v) {
     return arg;
 }
 
-static __attribute__((always_inline)) Clog_Arg clog_make_log_arg_a(void *v, void (*fn)(void *, char *)) {
+__attribute__((always_inline)) Clog_Arg clog_make_log_arg_a(void *v, void (*fn)(void *, char *)) {
     Clog_Arg arg;
     arg.ty = CLOG_ARG_ANY;
     arg.val.a = v;
